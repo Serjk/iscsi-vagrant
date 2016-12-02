@@ -1,0 +1,47 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_check_update = true
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  config.vm.network "private_network", ip: "10.0.1.101"
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  # Example for VirtualBox:
+  #
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
+    vb.gui = false
+    vb.name = "iscsi-initiator"
+    vb.memory = "1024"
+  end
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+  config.vm.provision "shell", inline: <<-SHELL
+    locale-gen
+    sudo apt-get update && apt-get install -y targetcli
+    sudo sed -i -e 's/node.startup = manual/node.startup = automatic/' /etc/iscsi/iscsid.conf
+    sudo iscsiadm -m discovery -t sendtargets -p 10.0.1.100
+    sudo iscsiadm -m node -L all
+    sudo iscsiadm -m session -P 3
+  SHELL
+end

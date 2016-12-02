@@ -1,3 +1,6 @@
-*.vdi
-*.log
-.vagrant
+target/*.vdi
+target/*.log
+target/.vagrant
+initiator/*.vdi
+initiator/*.log
+initiator/.vagrant
