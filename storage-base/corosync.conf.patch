@@ -1,0 +1,18 @@
+--- /etc/corosync/corosync.conf	2015-10-21 15:27:29.000000000 +0000
++++ /vagrant/corosync.conf	2016-12-09 20:44:11.000000000 +0000
+@@ -47,7 +47,7 @@
+ 		# identical instances of this configuration file
+ 		# across all your cluster nodes, without having to
+ 		# modify this option.
+-		bindnetaddr: 127.0.0.1
++		bindnetaddr: 10.0.1.0
+ 		# However, if you have multiple physical network
+ 		# interfaces configured for the same subnet, then the
+ 		# network address alone is not sufficient to identify
+@@ -107,5 +107,5 @@
+ 	# Enable and configure quorum subsystem (default: off)
+ 	# see also corosync.conf.5 and votequorum.5
+ 	provider: corosync_votequorum
+-	expected_votes: 2
++	expected_votes: 1
+ }

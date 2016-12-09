@@ -40,8 +40,8 @@ Vagrant.configure("2") do |config|
     locale-gen
     sudo apt-get update && apt-get install -y targetcli
     sudo sed -i -e 's/node.startup = manual/node.startup = automatic/' /etc/iscsi/iscsid.conf
-    sudo iscsiadm -m discovery -t sendtargets -p 10.0.1.100
     sudo iscsiadm -m discovery -t sendtargets -p 10.0.1.101
+    sudo iscsiadm -m discovery -t sendtargets -p 10.0.1.102
     sudo iscsiadm -m node -L all
     sudo iscsiadm -m session -P 3
 

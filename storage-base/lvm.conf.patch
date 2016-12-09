@@ -1,0 +1,20 @@
+--- /etc/lvm/lvm.conf	2016-04-16 07:57:19.000000000 +0000
++++ /vagrant/lvm.conf	2016-12-09 20:44:11.000000000 +0000
+@@ -680,7 +680,7 @@
+ 	#     in use, for example a virtual machine image or a disk that is
+ 	#     shared by a clustered machine.
+ 	# 
+-	locking_type = 1
++	locking_type = 3
+ 
+ 	# Configuration option global/wait_for_locks.
+ 	# When disabled, fail if a lock request would block.
+@@ -849,7 +849,7 @@
+ 	# are checked during pvscan --cache. To filter a device and prevent
+ 	# scanning from the LVM system entirely, including lvmetad, use
+ 	# devices/global_filter.
+-	use_lvmetad = 1
++	use_lvmetad = 0
+ 
+ 	# Configuration option global/use_lvmlockd.
+ 	# Use lvmlockd for locking among hosts using LVM on shared storage.

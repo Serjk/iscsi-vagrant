@@ -1,6 +1,10 @@
-target/*.vdi
-target/*.log
-target/.vagrant
+storage/*.vdi
+storage/*.log
+storage/.vagrant
+storage-base/*.vdi
+storage-base/*.log
+storage-base/.vagrant
+storage-base/*.box
 initiator/*.vdi
 initiator/*.log
 initiator/.vagrant

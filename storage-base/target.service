@@ -1,0 +1,14 @@
+[Unit]
+Description=iSCSI target service
+ConditionKernelCommandLine=!nocluster
+After=clvm.service
+Requires=clvm.service
+
+[Service]
+ExecStart=/etc/init.d/target start
+Type=oneshot
+RemainAfterExit=yes
+ExecStop=/etc/init.d/target stop
+
+[Install]
+WantedBy=multi-user.target

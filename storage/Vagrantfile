@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-disk_size = 5 * 1024
+disk_size = 10 * 1024
 
 file_root = File.dirname(File.expand_path(__FILE__))
 
@@ -62,14 +62,23 @@ class VagrantPlugins::ProviderVirtualBox::Action::SetName
     end
 end
 
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
 
-  config.vm.box = "ubuntu/xenial64"
-  config.vm.box_check_update = false
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = "storage-base"
+
+  # The url from where the 'config.vm.box' box will be fetched if it
+  # doesn't already exist on the user's system.
+  config.vm.box_url = "../storage-base/storage-base.box"
 
   config.vm.provider "virtualbox" do |vb|
     # Display the VirtualBox GUI when booting the machine
@@ -78,54 +87,34 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "iscsi-target0" do |target0|
-    target0.vm.network "private_network", ip: "10.0.1.100"
+    target0.vm.network "private_network", ip: "10.0.1.101"
     target0.vm.provider "virtualbox" do |vb|
       vb.name = "iscsi-target0"
     end
 
     target0.vm.provision "shell", inline: <<-SHELL
-      locale-gen
+      sudo systemctl start corosync.service
+      sudo systemctl enable corosync.service
 
-      #enable clvm locking
-      sudo sed -i -e 's/locking_type = 1/locking_type = 3/' /etc/lvm/lvm.conf
-      #disable lvmetad as it is not compatible with clvm
-      sudo sed -i -e 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
-      sudo systemctl stop lvm2-lvmetad.socket
-      sudo systemctl stop lvm2-lvmetad
+      sudo systemctl start dlm.service
+      sudo systemctl enable dlm.service
 
-      sudo apt-get update && apt-get install -y corosync
+      sudo systemctl start clvm.service
+      sudo systemctl enable clvm.service
 
-      #use private network for clustering
-      sudo sed -i -e 's/bindnetaddr: 127.0.0.1/bindnetaddr: 10.0.1.100/' /etc/corosync/corosync.conf
-      #reduce member count for quorum, as we don't have second node yet
-      sudo sed -i -e 's/expected_votes: 2/expected_votes: 1/' /etc/corosync/corosync.conf
-      sudo systemctl restart corosync
+      sudo systemctl start target.service
+      sudo systemctl enable target.service
 
-      sudo corosync-quorumtool -s
-
-      sudo apt-get install -y dlm clvm
-
-      sudo systemctl status dlm
-      sleep 1
-      sudo systemctl start dlm
-
-      #some workarounds for clvm init script
-      sudo mkdir -p /etc/cluster && sudo touch /etc/cluster/cluster.conf
-      sudo sed -i -e 's/\\/usr\\/sbin\\/corosync-quorumtool -s/true/' /etc/init.d/clvm
-
-      sudo systemctl daemon-reload
-      sudo systemctl stop clvm
-      sudo systemctl start clvm
-
-      sudo systemctl status clvm
+      sudo systemctl status corosync.service
+      sudo systemctl status dlm.service
+      sudo systemctl status clvm.service
+      sudo systemctl status target.service
 
       #create clustered volume group
       sudo lvm vgcreate --clustered y nvmegroup /dev/nvme0n1 /dev/nvme0n2
       sudo lvm lvcreate nvmegroup -L 3G
       sudo lvm lvcreate nvmegroup -L 3G
       sudo lvm lvcreate nvmegroup -L 3G
-
-      sudo apt-get install -y targetcli
 
       sudo targetcli /backstores/iblock create name=lvol0 dev=/dev/nvmegroup/lvol0
       sudo targetcli /backstores/iblock create name=lvol1 dev=/dev/nvmegroup/lvol1
@@ -135,7 +124,7 @@ Vagrant.configure("2") do |config|
 
       sudo targetcli /iscsi/iqn.2003-01.org.linux-iscsi.ubuntu-xenial.x8664:sn.ba53b24fa0e2/tpg1 set attribute authentication=0 demo_mode_write_protect=0 generate_node_acls=1 cache_dynamic_acls=1
 
-      sudo targetcli /iscsi/iqn.2003-01.org.linux-iscsi.ubuntu-xenial.x8664:sn.ba53b24fa0e2/tpg1/portals create ip_address=10.0.1.100
+      sudo targetcli /iscsi/iqn.2003-01.org.linux-iscsi.ubuntu-xenial.x8664:sn.ba53b24fa0e2/tpg1/portals create ip_address=10.0.1.101
 
       sudo targetcli /iscsi/iqn.2003-01.org.linux-iscsi.ubuntu-xenial.x8664:sn.ba53b24fa0e2/tpg1/luns create storage_object=/backstores/iblock/lvol0
       sudo targetcli /iscsi/iqn.2003-01.org.linux-iscsi.ubuntu-xenial.x8664:sn.ba53b24fa0e2/tpg1/luns create storage_object=/backstores/iblock/lvol1
@@ -149,50 +138,39 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "iscsi-target1" do |target1|
-    target1.vm.network "private_network", ip: "10.0.1.101"
+    target1.vm.network "private_network", ip: "10.0.1.102"
     target1.vm.provider "virtualbox" do |vb|
       vb.name = "iscsi-target1"
     end
     target1.vm.provision "shell", inline: <<-SHELL
-      locale-gen
 
-      sudo sed -i -e 's/locking_type = 1/locking_type = 3/' /etc/lvm/lvm.conf
-      sudo sed -i -e 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
-      sudo systemctl stop lvm2-lvmetad.socket
-      sudo systemctl stop lvm2-lvmetad
+      sudo systemctl start corosync.service
+      sudo systemctl enable corosync.service
 
-      sudo apt-get update && apt-get install -y corosync
+      sudo systemctl start dlm.service
+      sudo systemctl enable dlm.service
 
-      sudo sed -i -e 's/bindnetaddr: 127.0.0.1/bindnetaddr: 10.0.1.101/' /etc/corosync/corosync.conf
-      sudo sed -i -e 's/expected_votes: 2/expected_votes: 1/' /etc/corosync/corosync.conf
-      sudo systemctl restart corosync
+      sudo systemctl start clvm.service
+      sudo systemctl enable clvm.service
 
-      apt-get install -y dlm clvm
+      sudo systemctl start target.service
+      sudo systemctl enable target.service
 
-      sudo systemctl status dlm
-      sleep 1
-      sudo systemctl start dlm
-
-      sudo mkdir -p /etc/cluster && sudo touch /etc/cluster/cluster.conf
-      sudo sed -i -e 's/\\/usr\\/sbin\\/corosync-quorumtool -s/true/' /etc/init.d/clvm
-
-      sudo systemctl daemon-reload
-      sudo systemctl stop clvm
-      sudo systemctl start clvm
+      sudo systemctl status corosync.service
+      sudo systemctl status dlm.service
+      sudo systemctl status clvm.service
+      sudo systemctl status target.service
 
       sudo lvm vgdisplay
 
-      sudo apt-get install -y targetcli
-
       sudo cp /vagrant/scsi_target.lio /etc/target/
       rm /vagrant/scsi_target.lio
-      sudo sed -i -e 's/10.0.1.100/10.0.1.101/' /etc/target/scsi_target.lio
-
-      targetcli ls /
-      sleep 5
+      sudo sed -i -e 's/10.0.1.101/10.0.1.102/' /etc/target/scsi_target.lio
 
       sudo python /vagrant/iscsi_import.py
       sudo targetcli ls /
+
+      yes | sudo targetcli saveconfig
 
     SHELL
   end

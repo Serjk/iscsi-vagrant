@@ -1,0 +1,18 @@
+[Unit]
+Description=CLVM cluster service
+ConditionKernelCommandLine=!nocluster
+Requires=corosync.service dlm.service
+After=corosync.service dlm.service
+
+[Service]
+EnvironmentFile=/etc/default/clvm
+ExecStart=/usr/sbin/clvmd
+Type=forking
+ExecStartPost=/sbin/vgchange -ayl
+ExecStop=/usr/bin/deactivate_cluster_vgs.sh 
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

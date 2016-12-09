@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-16.04"
+
+  config.ssh.insert_key = false
+  config.ssh.password = "vagrant"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "storage-base"
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+
+    sudo apt-get update
+
+    sudo apt-get upgrade -y
+
+    sudo apt-get install -y corosync dlm clvm targetcli
+
+    sudo systemctl stop dlm.service
+    sudo systemctl disable dlm.service
+    sudo systemctl stop corosync.service
+    sudo systemctl disable corosync.service
+
+    sudo systemctl disable clvm
+    sudo systemctl disable target
+
+    sudo patch -p0 /etc/lvm/lvm.conf < /vagrant/lvm.conf.patch
+    sudo patch -p0 /etc/corosync/corosync.conf < /vagrant/corosync.conf.patch
+    sudo patch -p0 /lib/systemd/system/corosync.service < /vagrant/corosync.service.patch
+    sudo patch -p0 /lib/systemd/system/dlm.service < /vagrant/dlm.service.patch
+
+    sudo cp /vagrant/clvm.service /lib/systemd/system/
+    sudo chmod 644 /lib/systemd/system/clvm.service
+
+    sudo cp /vagrant/deactivate_cluster_vgs.sh /usr/bin/
+    sudo chmod +x /usr/bin/deactivate_cluster_vgs.sh
+
+    sudo cp /vagrant/target.service /lib/systemd/system/target.service
+    sudo chmod 644 /lib/systemd/system/target.service
+
+  SHELL
+end

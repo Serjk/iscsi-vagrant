@@ -1,0 +1,11 @@
+--- /lib/systemd/system/corosync.service	2016-04-04 16:01:49.000000000 +0000
++++ /vagrant/corosync.service	2016-12-09 20:44:11.000000000 +0000
+@@ -16,7 +16,7 @@
+ #  pacemaker.service, and if you want to exert the watchdog when a
+ #  corosync process is terminated abnormally,
+ #  uncomment the line of the following Restart= and RestartSec=.
+-#Restart=on-failure
++Restart=on-failure
+ #  Specify a period longer than soft_margin as RestartSec.
+ #RestartSec=70
+ #  rewrite according to environment.
