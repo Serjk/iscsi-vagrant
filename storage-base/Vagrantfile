@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
 
     sudo apt-get upgrade -y
 
-    sudo apt-get install -y corosync dlm clvm targetcli
+    sudo apt-get install -y corosync dlm clvm targetcli docker.io
 
     sudo systemctl stop dlm.service
     sudo systemctl disable dlm.service
