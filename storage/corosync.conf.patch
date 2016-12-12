@@ -1,0 +1,21 @@
+--- /etc/corosync/corosync.conf	2016-12-12 08:44:48.162527594 +0000
++++ /vagrant/corosync.conf	2016-12-12 10:38:59.000000000 +0000
+@@ -107,5 +107,17 @@
+ 	# Enable and configure quorum subsystem (default: off)
+ 	# see also corosync.conf.5 and votequorum.5
+ 	provider: corosync_votequorum
+-	expected_votes: 1
++	two_node: 1
+ }
++
++nodelist {
++	node {
++		ring0_addr: 10.0.1.101
++		nodeid: 1
++	}
++	node {
++		ring0_addr: 10.0.1.102
++		nodeid: 2
++	}
++}
++

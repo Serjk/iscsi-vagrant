@@ -86,22 +86,25 @@ Vagrant.configure("2") do |config|
     vb.memory = "1024"
   end
 
-  config.vm.provision "shell", inline: <<-SHELL
+  config.vm.provision "cluster-setup", type: "shell", inline: <<-SHELL
+    sudo patch -p0 /etc/corosync/corosync.conf < /vagrant/corosync.conf.patch
+
     sudo systemctl start corosync.service
     sudo systemctl enable corosync.service
+    sudo systemctl status corosync.service
 
     sudo systemctl start dlm.service
     sudo systemctl enable dlm.service
+    sudo systemctl status dlm.service
+  SHELL
 
+  config.vm.provision "clvm-setup", type: "shell", run: "never", inline: <<-SHELL
     sudo systemctl start clvm.service
     sudo systemctl enable clvm.service
+    sudo systemctl status clvm.service
 
     sudo systemctl start target.service
     sudo systemctl enable target.service
-
-    sudo systemctl status corosync.service
-    sudo systemctl status dlm.service
-    sudo systemctl status clvm.service
     sudo systemctl status target.service
   SHELL
 
@@ -111,7 +114,7 @@ Vagrant.configure("2") do |config|
       vb.name = "iscsi-target0"
     end
 
-    target0.vm.provision "shell", inline: <<-SHELL
+    target0.vm.provision "iscsi-setup", type: "shell", run: "never", inline: <<-SHELL
       #create clustered volume group
       sudo lvm vgcreate --clustered y nvmegroup /dev/nvme0n1 /dev/nvme0n2
       sudo lvm lvcreate nvmegroup -L 3G
@@ -144,7 +147,7 @@ Vagrant.configure("2") do |config|
     target1.vm.provider "virtualbox" do |vb|
       vb.name = "iscsi-target1"
     end
-    target1.vm.provision "shell", inline: <<-SHELL
+    target1.vm.provision "iscsi-setup", type: "shell", run: "never", inline: <<-SHELL
       sudo lvm vgdisplay
 
       sudo cp /vagrant/scsi_target.lio /etc/target/
